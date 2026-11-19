@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>交易 - 委託查詢</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入繁體中文無襯線字體確保筆畫清晰銳利 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* 全局字體與深色證券介面基礎樣式 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 數字等寬對齊，確保價格與股數排版如截圖般整齊 */
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 手機主畫面背景：上方深黑/近純黑，下半部保留截圖左下微弱深藍光暈與暗紋 */
+        .app-bg-gradient {
+            background-color: #030508;
+            background-image:
+                radial-gradient(circle at 22% 96%, rgba(16, 42, 74, 0.34) 0%, rgba(7, 15, 27, 0.14) 38%, rgba(3, 5, 8, 0) 68%),
+                linear-gradient(180deg, #000000 0%, #030508 42%, #04070c 78%, #07111e 100%);
+        }
+
+        /* 截圖下半部微弱暗色花瓣/幾何浮水印層 */
+        .watermark-layer {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 430 420'%3E%3Cg fill='none' stroke='%23182b44' stroke-opacity='0.14' stroke-width='1.2'%3E%3Ccircle cx='120' cy='335' r='78'/%3E%3Ccircle cx='120' cy='335' r='118'/%3E%3Cellipse cx='120' cy='252' rx='36' ry='68' transform='rotate(-18 120 335)'/%3E%3Cellipse cx='120' cy='252' rx='36' ry='68' transform='rotate(36 120 335)'/%3E%3Cellipse cx='120' cy='252' rx='36' ry='68' transform='rotate(90 120 335)'/%3E%3Cellipse cx='120' cy='252' rx='36' ry='68' transform='rotate(144 120 335)'/%3E%3Cellipse cx='120' cy='252' rx='36' ry='68' transform='rotate(198 120 335)'/%3E%3Cellipse cx='120' cy='252' rx='36' ry='68' transform='rotate(252 120 335)'/%3E%3C/g%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: left bottom;
+            background-size: 100% auto;
+        }
+
+        /* 自訂捲軸隱藏 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* 右上重新整理旋轉動畫 */
+        @keyframes spin-once {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-spin-once {
+            animation: spin-once 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 點擊列展開委託明細的平滑抽屜 */
+        .detail-drawer {
+            transition: max-height 0.24s ease-out, opacity 0.2s ease-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .detail-drawer.open {
+            max-height: 180px;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center sm:py-3">
+
+    <!-- 外部模擬控制台（可一鍵隱藏以獲得純淨手機全螢幕畫面） -->
+    <div id="simulator-toolbar" class="w-full max-w-[430px] bg-[#111924] border border-[#243244] sm:rounded-xl px-3 py-2 mb-2 flex flex-col gap-2 text-xs text-gray-300 shadow-xl">
+        <div class="flex items-center justify-between gap-1.5">
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <button onclick="openAddOrderModal()" class="px-2.5 py-1 rounded-md bg-[#2b85c9] hover:bg-[#3594db] text-white font-semibold shadow-xs transition active:scale-95">
+                    + 模擬下單
+                </button>
+                <button onclick="loadPreset('14:09')" id="btn-preset-1" class="px-2 py-1 rounded-md bg-[#182433] text-gray-200 border border-[#2f4157] hover:border-[#4cc2ff] transition active:scale-95">
+                    範例 14:09
+                </button>
+                <button onclick="loadPreset('14:43')" id="btn-preset-2" class="px-2 py-1 rounded-md bg-[#182433] text-gray-200 border border-[#2f4157] hover:border-[#4cc2ff] transition active:scale-95">
+                    範例 14:43
+                </button>
+                <button onclick="clearAllOrders()" class="px-2 py-1 rounded-md bg-[#182433] text-gray-400 border border-[#2a384a] hover:text-white transition active:scale-95">
+                    清空
+                </button>
+            </div>
+            <button onclick="toggleToolbar(false)" class="px-2 py-1 rounded-md bg-[#1c2838] text-gray-300 hover:text-white border border-gray-700 shrink-0" title="隱藏控制列">
+                隱藏面板
+            </button>
+        </div>
+
+        <!-- 時間與電量微調列 -->
+        <div class="flex items-center justify-between pt-1.5 border-t border-[#1e2b3b] text-[11px] text-gray-400">
+            <div class="flex items-center gap-2">
+                <label class="flex items-center gap-1">
+                    <span>時間:</span>
+                    <input id="ctrl-time" type="text" value="14:09" maxlength="5" oninput="syncStatusBar()" class="w-12 bg-[#090e14] border border-[#2e3e52] rounded px-1.5 py-0.5 text-white text-center tabular-nums focus:border-[#4cc2ff] focus:outline-none">
+                </label>
+                <label class="flex items-center gap-1">
+                    <span>電量%:</span>
+                    <input id="ctrl-battery" type="number" min="1" max="100" value="77" oninput="syncStatusBar()" class="w-12 bg-[#090e14] border border-[#2e3e52] rounded px-1.5 py-0.5 text-white text-center tabular-nums focus:border-[#4cc2ff] focus:outline-none">
+                </label>
+            </div>
+            <span class="text-[10.5px] text-gray-400">亦可直接點擊手機頂部時間/電量修改</span>
+        </div>
+    </div>
+
+    <!-- 隱藏控制台後的浮動恢復小按鈕 -->
+    <button id="show-toolbar-btn" onclick="toggleToolbar(true)" class="hidden fixed top-2 right-2 z-50 px-2.5 py-1 rounded-full bg-[#182638]/90 text-[11px] text-[#4cc2ff] border border-[#4cc2ff]/40 shadow-lg backdrop-blur-xs">
+        顯示設定
+    </button>
+
+    <!-- 手機視窗主容器 -->
+    <div class="relative w-full max-w-[430px] h-[100dvh] sm:h-[852px] app-bg-gradient sm:rounded-[40px] sm:border-[6px] sm:border-[#1c222b] shadow-2xl flex flex-col overflow-hidden select-none">
+
+        <!-- 1. iOS 頂部狀態列 -->
+        <header class="w-full px-6 pt-3 pb-1.5 flex items-center justify-between text-[14px] font-semibold tracking-tight bg-[#000000] shrink-0">
+            <!-- 左側：時間 + 實心白色定位箭頭 -->
+            <div onclick="promptEditClock()" class="flex items-center gap-1 cursor-pointer active:opacity-75" title="點擊修改時間">
+                <span id="status-clock" class="tabular-nums text-white font-semibold">14:09</span>
+                <svg class="w-[11px] h-[11px] text-white fill-current -mt-0.5" viewBox="0 0 24 24">
+                    <path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/>
+                </svg>
+            </div>
+
+            <!-- 右側：4格訊號 + 5G + iOS 實心白色電量膠囊 -->
+            <div class="flex items-center gap-1.5">
+                <div class="flex items-end gap-[2px] h-[11px]">
+                    <span class="w-[3px] h-[4.5px] bg-white rounded-[1px]"></span>
+                    <span class="w-[3px] h-[6.5px] bg-white rounded-[1px]"></span>
+                    <span class="w-[3px] h-[8.5px] bg-white rounded-[1px]"></span>
+                    <span class="w-[3px] h-[10.5px] bg-white/35 rounded-[1px]"></span>
+                </div>
+                <span class="text-[12.5px] font-bold text-white tracking-tight">5G</span>
+                <div onclick="promptEditBattery()" class="flex items-center cursor-pointer active:opacity-75" title="點擊修改電量">
+                    <div id="status-battery-pill" class="min-w-[25px] h-[13px] px-1 bg-white text-[#000000] text-[10.5px] font-extrabold rounded-[3.5px] flex items-center justify-center leading-none tabular-nums">
+                        <span id="status-battery">77</span>
+                    </div>
+                    <div class="w-[1.5px] h-[4.5px] bg-white/60 rounded-r-[1px] ml-[1px]"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 2. 頂部交易功能分頁導覽列 -->
+        <nav class="w-full bg-[#000000] px-3 pt-1 flex items-center justify-between border-b border-[#111720] shrink-0">
+            <!-- 返回箭頭 -->
+            <button onclick="showToast('返回上一頁')" class="p-2 text-white active:opacity-60 transition">
+                <svg class="w-[21px] h-[21px]" fill="none" stroke="currentColor" stroke-width="2.6" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.5 19l-7-7 7-7"/>
+                </svg>
+            </button>
+
+            <!-- 5個功能分頁 -->
+            <div class="flex items-center justify-around flex-1 text-[16.5px] font-medium">
+                <button onclick="switchTopTab(this, '下單')" class="top-tab py-2.5 px-2 text-white hover:text-gray-200 transition relative">
+                    下單
+                </button>
+                <button onclick="switchTopTab(this, '委託')" class="top-tab py-2.5 px-2 text-[#5bc2e7] font-medium transition relative">
+                    委託
+                    <span class="tab-indicator absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#5bc2e7]"></span>
+                </button>
+                <button onclick="switchTopTab(this, '明細')" class="top-tab py-2.5 px-2 text-white hover:text-gray-200 transition relative">
+                    明細
+                </button>
+                <button onclick="switchTopTab(this, '庫存')" class="top-tab py-2.5 px-2 text-white hover:text-gray-200 transition relative">
+                    庫存
+                </button>
+                <button onclick="switchTopTab(this, '帳務')" class="top-tab py-2.5 px-2 text-white hover:text-gray-200 transition relative">
+                    帳務
+                </button>
+            </div>
+
+            <!-- 搜尋放大鏡圖示 -->
+            <button onclick="openSearchModal()" class="p-2 text-white active:opacity-60 transition" title="搜尋委託商品">
+                <svg class="w-[21px] h-[21px]" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="7.5"/>
+                    <path stroke-linecap="round" d="M16.6 16.6L21 21"/>
+                </svg>
+            </button>
+        </nav>
+
+        <!-- 3. 帳號與狀態篩選列 -->
+        <section class="w-full bg-[#060a10] px-2.5 py-2.5 flex items-center gap-2 shrink-0">
+            <!-- 複委託帳號下拉膠囊 -->
+            <div class="relative flex-[1.55] min-w-0">
+                <select id="account-select" onchange="showToast('已切換帳號：' + this.value)" class="w-full appearance-none bg-[#0b1017] text-white text-[14px] font-medium pl-3 pr-7 py-2 rounded-[9px] border border-[#3a4350] focus:border-[#38a7e5] focus:outline-none truncate">
+                    <option value="複 982q-0639418(台幣)">複 982q-0639418(台幣)</option>
+                    <option value="複 982q-0639418(港幣)">複 982q-0639418(港幣)</option>
+                    <option value="證 981q-0885120(台幣)">證 981q-0885120(台幣)</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-white">
+                    <svg class="w-3 h-3 fill-current" viewBox="0 0 20 20">
+                        <path d="M5.25 7.5L10 13l4.75-5.5H5.25z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 委託狀態篩選下拉膠囊 -->
+            <div class="relative flex-1 min-w-0">
+                <select id="status-filter" onchange="renderOrders()" class="w-full appearance-none bg-[#0b1017] text-white text-[14px] font-medium pl-4 pr-7 py-2 rounded-[9px] border border-[#3a4350] focus:border-[#38a7e5] focus:outline-none text-center">
+                    <option value="ALL">全部</option>
+                    <option value="PENDING">可刪改</option>
+                    <option value="FILLED">已成交</option>
+                    <option value="WARNING">委託異常</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-white">
+                    <svg class="w-3 h-3 fill-current" viewBox="0 0 20 20">
+                        <path d="M5.25 7.5L10 13l4.75-5.5H5.25z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 重新整理圓形箭頭按鈕 -->
+            <button onclick="handleRefresh()" class="p-1 text-white active:scale-90 transition shrink-0" title="重新整理">
+                <svg id="refresh-icon" class="w-[23px] h-[23px]" fill="none" stroke="currentColor" stroke-width="1.45" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.5 11.5A8.5 8.5 0 1 1 18 5.5"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.5 3.5v4.5h-4.5"/>
+                </svg>
+            </button>
+        </section>
+
+        <!-- 4. 表格標題列 (深藍灰底色 #132130，與參考圖片欄位位置一致) -->
+        <div class="w-full bg-[#132130] px-2.5 py-2 flex items-center text-[14px] font-medium text-[#d8e1eb] border-y border-[#1b2b3d] shrink-0">
+            <div class="w-[54px] text-left pl-0.5 shrink-0">刪/改</div>
+            <div class="flex-1 min-w-0 text-center">名稱</div>
+            <div class="w-[74px] text-right pr-1.5 shrink-0">委價/成均</div>
+            <div class="w-[116px] text-right pr-4 shrink-0">數量</div>
+        </div>
+
+        <!-- 5. 委託單列表區塊 (可捲動，含左下深藍光暈與幾何花瓣暗紋) -->
+        <main id="orders-container" class="watermark-layer flex-1 overflow-y-auto no-scrollbar divide-y divide-[#0d141e]">
+            <!-- 由 JavaScript 動態渲染各狀態委託列 -->
+        </main>
+
+        <!-- 6. 底部主功能導覽列 -->
+        <footer class="w-full bg-[#000000] border-t border-[#141a22] px-2 pt-2 pb-5 sm:pb-4 grid grid-cols-6 items-center text-center shrink-0 z-20">
+            <!-- 首頁 -->
+            <button onclick="switchBottomTab(this, '首頁')" class="bottom-tab flex items-center justify-center py-0.5 text-white active:opacity-70 transition" title="首頁">
+                <svg class="w-[21px] h-[21px] fill-current" viewBox="0 0 24 24">
+                    <path d="M12 3.2L2.5 11.5h2.8v8.8h5.2v-5.8h3v5.8h5.2v-8.8h2.8L12 3.2z"/>
+                </svg>
+            </button>
+
+            <!-- 專家 -->
+            <button onclick="switchBottomTab(this, '專家')" class="bottom-tab py-0.5 text-[14.5px] font-normal text-white active:opacity-70 transition">
+                專家
+            </button>
+
+            <!-- 自選 -->
+            <button onclick="switchBottomTab(this, '自選')" class="bottom-tab py-0.5 text-[14.5px] font-normal text-white active:opacity-70 transition">
+                自選
+            </button>
+
+            <!-- 交易 -->
+            <button onclick="switchBottomTab(this, '交易')" class="bottom-tab py-0.5 text-[14.5px] font-medium text-[#4db8e8] active:opacity-70 transition">
+                交易
+            </button>
+
+            <!-- 行情 -->
+            <button onclick="switchBottomTab(this, '行情')" class="bottom-tab py-0.5 text-[14.5px] font-normal text-white active:opacity-70 transition">
+                行情
+            </button>
+
+            <!-- e櫃台 -->
+            <button onclick="switchBottomTab(this, 'e櫃台')" class="bottom-tab py-0.5 text-[14.5px] font-normal text-white active:opacity-70 transition">
+                e櫃台
+            </button>
+        </footer>
+
+        <!-- iPhone 底部白色 Home 指示橫條 -->
+        <div class="hidden sm:block absolute bottom-1.5 left-1/2 -translate-x-1/2 w-[134px] h-[5px] bg-white rounded-full pointer-events-none z-30"></div>
+
+        <!-- ================= 互動彈窗與提示 ================= -->
+
+        <!-- 輕量提示 Toast -->
+        <div id="toast" class="pointer-events-none fixed sm:absolute bottom-20 left-1/2 -translate-x-1/2 bg-[#162333]/95 text-white text-[13px] px-4 py-2 rounded-full border border-[#344d6b] shadow-xl opacity-0 transition-opacity duration-200 whitespace-nowrap z-50">
+            提示訊息
+        </div>
+
+        <!-- 點擊「刪改」按鈕開啟的刪單/改價減量彈窗 -->
+        <div id="modify-modal" class="hidden fixed sm:absolute inset-0 bg-black/75 backdrop-blur-xs z-40 flex items-end sm:items-center justify-center p-3">
+            <div class="w-full bg-[#101924] border border-[#283a4f] rounded-2xl p-4 shadow-2xl text-white">
+                <div class="flex items-center justify-between pb-3 border-b border-[#1f2e40]">
+                    <div>
+                        <span class="text-xs text-[#4db8e8] font-medium">複委託刪改作業</span>
+                        <h3 id="modal-stock-title" class="text-base font-bold mt-0.5">恆昌集團國際 (01856.HK)</h3>
+                    </div>
+                    <button onclick="closeModifyModal()" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white rounded-lg bg-[#1a2738]">✕</button>
+                </div>
+
+                <div class="py-3.5 space-y-3 text-sm">
+                    <div class="flex justify-between items-center bg-[#090f17] px-3 py-2 rounded-lg border border-[#1d2b3b]">
+                        <span class="text-gray-400">交易別 / 委託時間</span>
+                        <span id="modal-order-meta" class="font-medium text-[#20c973]">現賣 (港)</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">修改委託價格</label>
+                        <div class="flex items-center gap-2">
+                            <button onclick="adjustModalPrice(-0.01)" class="w-10 h-10 rounded-lg bg-[#1a2838] hover:bg-[#24374d] text-lg font-bold">-</button>
+                            <input id="modal-price-input" type="number" step="0.01" class="flex-1 h-10 bg-[#070b12] border border-[#32465e] rounded-lg text-center font-bold text-base tabular-nums focus:border-[#4db8e8] focus:outline-none">
+                            <button onclick="adjustModalPrice(0.01)" class="w-10 h-10 rounded-lg bg-[#1a2838] hover:bg-[#24374d] text-lg font-bold">+</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">減量後剩餘股數 (僅支援減量)</label>
+                        <input id="modal-qty-input" type="number" step="1000" class="w-full h-10 bg-[#070b12] border border-[#32465e] rounded-lg px-3 text-right font-bold text-base tabular-nums focus:border-[#4db8e8] focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 pt-2">
+                    <button onclick="executeCancelOrder()" class="py-2.5 rounded-xl bg-[#d9383a] hover:bg-[#e54345] text-white font-semibold text-sm transition active:scale-95">
+                        確認刪單
+                    </button>
+                    <button onclick="executeSimulateFill()" class="py-2.5 rounded-xl bg-[#1c2f45] hover:bg-[#253e59] text-[#4db8e8] border border-[#4db8e8]/30 font-semibold text-sm transition active:scale-95">
+                        模擬全成
+                    </button>
+                    <button onclick="executeModifyOrder()" class="py-2.5 rounded-xl bg-[#389ee3] hover:bg-[#49abf0] text-white font-bold text-sm transition active:scale-95">
+                        確認改價量
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 模擬下單彈窗 (支援自訂名稱、代號、市場別、日期與時間、狀態) -->
+        <div id="add-modal" class="hidden fixed sm:absolute inset-0 bg-black/75 backdrop-blur-xs z-40 flex items-end sm:items-center justify-center p-3">
+            <div class="w-full bg-[#101924] border border-[#283a4f] rounded-2xl p-4 shadow-2xl text-white max-h-[90%] overflow-y-auto">
+                <div class="flex items-center justify-between pb-2.5 border-b border-[#1f2e40]">
+                    <h3 class="text-base font-bold">新增委託紀錄</h3>
+                    <button onclick="closeAddOrderModal()" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white rounded-lg bg-[#1a2738]">✕</button>
+                </div>
+
+                <div class="py-3 space-y-2.5 text-sm">
+                    <!-- 常用標的快選 -->
+                    <div class="flex items-center gap-1.5 flex-wrap text-xs">
+                        <span class="text-gray-400">快選：</span>
+                        <button type="button" onclick="fillQuickStock('恆昌集團國際', '01856.HK', '港', '0.56')" class="px-2 py-0.5 rounded bg-[#182636] hover:bg-[#22354a] text-gray-200 border border-[#2b3f57]">恆昌集團國際</button>
+                        <button type="button" onclick="fillQuickStock('騰訊控股', '00700.HK', '港', '382.40')" class="px-2 py-0.5 rounded bg-[#182636] hover:bg-[#22354a] text-gray-200 border border-[#2b3f57]">騰訊控股</button>
+                        <button type="button" onclick="fillQuickStock('輝達 NVDA', 'NVDA.US', '美', '138.50')" class="px-2 py-0.5 rounded bg-[#182636] hover:bg-[#22354a] text-gray-200 border border-[#2b3f57]">輝達 NVDA</button>
+                    </div>
+
+                    <!-- 商品名稱 -->
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">商品名稱</label>
+                        <input id="new-name" type="text" value="恆昌集團國際" placeholder="請輸入股票名稱" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white focus:border-[#4db8e8] focus:outline-none">
+                    </div>
+
+                    <!-- 股票代號 + 市場別 -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">股票代號</label>
+                            <input id="new-code" type="text" value="01856.HK" placeholder="例: 01856.HK" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white font-mono focus:border-[#4db8e8] focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">市場別</label>
+                            <select id="new-market" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white">
+                                <option value="港">(港) 香港</option>
+                                <option value="美">(美) 美國</option>
+                                <option value="日">(日) 日本</option>
+                                <option value="台">(台) 台灣</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 買賣別 + 委託狀態 -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">買賣別</label>
+                            <select id="new-side" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white">
+                                <option value="SELL">現賣 (綠色)</option>
+                                <option value="BUY">現買 (紅色)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">交易狀態</label>
+                            <select id="new-status" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white">
+                                <option value="PENDING">未成交 (藍底白字「刪改」)</option>
+                                <option value="FILLED">全部成交 (無按鈕)</option>
+                                <option value="WARNING">委託異常 (左側橘底「!」)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 委託價格 + 委託數量 -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">委託價格</label>
+                            <input id="new-price" type="number" step="0.01" value="0.56" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 tabular-nums text-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">委託股數 (如 40000 / 400000 / 4000000)</label>
+                            <input id="new-qty" type="number" step="1000" value="40000" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 tabular-nums text-white">
+                        </div>
+                    </div>
+
+                    <!-- 委託日期 + 委託時間 -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">委託日期</label>
+                            <input id="new-date" type="date" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white tabular-nums">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">委託時間</label>
+                            <input id="new-time" type="time" step="1" value="14:05:18" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white tabular-nums">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="submitNewOrder()" class="w-full py-2.5 rounded-xl bg-[#389ee3] hover:bg-[#49abf0] text-white font-bold text-sm transition shadow-md">
+                    確認送出委託
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /**
+         * 14:09 範例資料
+         */
+        const PRESET_1409 = [
+            {
+                id: 'ORD-101',
+                name: '恆昌集團國際',
+                code: '01856.HK',
+                side: 'SELL',
+                market: '港',
+                status: 'PENDING',
+                orderPrice: 0.56,
+                avgPrice: null,
+                remQty: 40000,
+                filledQty: 0,
+                orderNo: 'H0082914',
+                orderDate: '2026-11-19',
+                orderTime: '14:05:18',
+                statusDesc: '委託成功 (掛單中，可執行刪單或改價減量)',
+                expanded: false
+            },
+            {
+                id: 'ORD-102',
+                name: '恆昌集團國際',
+                code: '01856.HK',
+                side: 'BUY',
+                market: '港',
+                status: 'FILLED',
+                orderPrice: 0.52,
+                avgPrice: 0.52,
+                remQty: 0,
+                filledQty: 400000,
+                orderNo: 'H0082703',
+                orderDate: '2026-11-19',
+                orderTime: '13:48:02',
+                statusDesc: '全部成交 (已全數撮合成交)',
+                expanded: false
+            },
+            {
+                id: 'ORD-103',
+                name: '恆昌集團國際',
+                code: '01856.HK',
+                side: 'BUY',
+                market: '港',
+                status: 'WARNING',
+                orderPrice: 0.52,
+                avgPrice: null,
+                remQty: 4000000,
+                filledQty: 0,
+                orderNo: 'H0082699',
+                orderDate: '2026-11-19',
+                orderTime: '13:47:55',
+                statusDesc: '委託異常：交易額度檢核未通過或委託價格偏離限制',
+                expanded: false
+            }
+        ];
+
+        /**
+         * 14:43 範例資料
+         */
+        const PRESET_1443 = [
+            {
+                id: 'ORD-101',
+                name: '恆昌集團國際',
+                code: '01856.HK',
+                side: 'SELL',
+                market: '港',
+                status: 'FILLED',
+                orderPrice: 0.56,
+                avgPrice: 0.56,
+                remQty: 0,
+                filledQty: 40000,
+                orderNo: 'H0082914',
+                orderDate: '2026-11-19',
+                orderTime: '14:05:18',
+                statusDesc: '全部成交 (14:32 撮合成交 40,000 股)',
+                expanded: false
+            },
+            {
+                id: 'ORD-102',
+                name: '恆昌集團國際',
+                code: '01856.HK',
+                side: 'BUY',
+                market: '港',
+                status: 'FILLED',
+                orderPrice: 0.52,
+                avgPrice: 0.52,
+                remQty: 0,
+                filledQty: 400000,
+                orderNo: 'H0082703',
+                orderDate: '2026-11-19',
+                orderTime: '13:48:02',
+                statusDesc: '全部成交 (已全數撮合成交)',
+                expanded: false
+            },
+            {
+                id: 'ORD-103',
+                name: '恆昌集團國際',
+                code: '01856.HK',
+                side: 'BUY',
+                market: '港',
+                status: 'WARNING',
+                orderPrice: 0.52,
+                avgPrice: null,
+                remQty: 4000000,
+                filledQty: 0,
+                orderNo: 'H0082699',
+                orderDate: '2026-11-19',
+                orderTime: '13:47:55',
+                statusDesc: '委託異常：交易額度檢核未通過或委託價格偏離限制',
+                expanded: false
+            }
+        ];
+
+        // 預設不顯示任何委託紀錄
+        let currentOrders = [];
+        let editingOrderId = null;
+        let toastTimer = null;
+
+        /**
+         * 千分位數量格式化：
+         * 40000 -> 40,000
+         * 400000 -> 400,000
+         * 4000000 -> 4,000,000
+         */
+        function formatNumber(num) {
+            const parsed = Number(num);
+            if (!Number.isFinite(parsed)) return '0';
+            return Math.trunc(parsed).toLocaleString('en-US');
+        }
+
+        function formatPrice(val) {
+            if (val === null || val === undefined || val === '') return '--';
+            return Number(val).toFixed(2);
+        }
+
+        /**
+         * 渲染委託列表（欄位與位置完全依參考圖片配置）
+         */
+        function renderOrders() {
+            const container = document.getElementById('orders-container');
+            const filterVal = document.getElementById('status-filter').value;
+
+            const filtered = currentOrders.filter(item => {
+                if (filterVal === 'ALL') return true;
+                return item.status === filterVal;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = filtered.map(order => {
+                const isBuy = order.side === 'BUY';
+                const sideText = isBuy ? '現買' : '現賣';
+                const sideColorClass = isBuy ? 'text-[#e04856]' : 'text-[#29b677]';
+
+                let leftActionHtml = '';
+                let warningEdgeHtml = '';
+
+                if (order.status === 'PENDING') {
+                    // 藍底 (#389ee3) + 純白 (#ffffff) 粗體「刪改」按鈕
+                    leftActionHtml = `
+                        <button onclick="event.stopPropagation(); openModifyModal('${order.id}')"
+                            class="bg-[#389ee3] hover:bg-[#49abf0] active:scale-95 text-white font-bold text-[13.5px] px-2.5 py-1 rounded-[7px] shadow-xs transition tracking-wide">
+                            刪改
+                        </button>
+                    `;
+                } else if (order.status === 'WARNING') {
+                    // 最左側貼邊橘色警示條 + 白色驚嘆號
+                    warningEdgeHtml = `
+                        <div class="absolute left-0 top-0 bottom-0 w-[13px] bg-[#f38216] flex items-center justify-center">
+                            <span class="text-white font-extrabold text-[13px] leading-none">!</span>
+                        </div>
+                    `;
+                }
+
+                return `
+                <div class="relative bg-[#05080d]/70 hover:bg-[#0b121c]/80 transition-colors">
+                    ${warningEdgeHtml}
+
+                    <div onclick="toggleOrderDetail('${order.id}')" class="px-2.5 py-[9px] flex items-center cursor-pointer">
+                        <!-- 欄1：刪/改 -->
+                        <div class="w-[54px] flex items-center justify-start pl-0.5 shrink-0">
+                            ${leftActionHtml}
+                        </div>
+
+                        <!-- 欄2：名稱與現買/現賣(市場) -->
+                        <div class="flex-1 min-w-0 flex flex-col items-center justify-center text-center leading-[1.35]">
+                            <span class="text-[15px] font-medium text-white tracking-tight truncate max-w-full">
+                                ${order.name}
+                            </span>
+                            <div class="mt-[3px] text-[14.5px] font-normal">
+                                <span class="${sideColorClass}">${sideText}</span>
+                                <span class="text-white ml-0.5">(${order.market})</span>
+                            </div>
+                        </div>
+
+                        <!-- 欄3：委價 / 成均 -->
+                        <div class="w-[74px] flex flex-col items-end justify-center pr-1.5 tabular-nums leading-[1.35] shrink-0">
+                            <span class="text-[15.5px] font-medium text-white">
+                                ${formatPrice(order.orderPrice)}
+                            </span>
+                            <span class="mt-[3px] text-[15.5px] font-medium text-white">
+                                ${formatPrice(order.avgPrice)}
+                            </span>
+                        </div>
+
+                        <!-- 欄4：數量 餘/成（千分位顯示 40,000 / 400,000 / 4,000,000） + 右側小向下箭頭 -->
+                        <div class="w-[116px] flex items-center justify-end gap-1.5 tabular-nums leading-[1.35] shrink-0">
+                            <div class="flex flex-col items-end min-w-0">
+                                <span class="text-[14.5px] font-medium text-white break-all text-right">
+                                    餘 ${formatNumber(order.remQty)}
+                                </span>
+                                <span class="mt-[3px] text-[14.5px] font-medium text-white break-all text-right">
+                                    成 ${formatNumber(order.filledQty)}
+                                </span>
+                            </div>
+                            <svg class="w-[13px] h-[13px] text-white shrink-0 transition-transform duration-200 ${order.expanded ? 'rotate-180 text-[#5bc2e7]' : ''}"
+                                 fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- 展開後的委託日期、書號與詳細狀態 -->
+                    <div class="detail-drawer ${order.expanded ? 'open' : ''} bg-[#121c29] border-t border-[#243449] px-4 text-xs text-gray-300">
+                        <div class="py-2.5 space-y-1.5">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">商品代號：</span>
+                                <span class="font-mono text-gray-200">${order.code}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">委託日期時間：</span>
+                                <span class="tabular-nums text-gray-200">${order.orderDate} ${order.orderTime}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">委託書號：</span>
+                                <span class="font-mono text-gray-200">${order.orderNo}</span>
+                            </div>
+                            <div class="flex justify-between items-start gap-2">
+                                <span class="text-gray-400 shrink-0">回報狀態：</span>
+                                <span class="text-right font-medium ${order.status === 'WARNING' ? 'text-[#ff9c38]' : (order.status === 'FILLED' ? 'text-[#28cd72]' : 'text-[#5bc2e7]')}">
+                                    ${order.statusDesc}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function toggleOrderDetail(id) {
+            const target = currentOrders.find(o => o.id === id);
+            if (target) {
+                target.expanded = !target.expanded;
+                renderOrders();
+            }
+        }
+
+        function loadPreset(timeStr) {
+            if (timeStr === '14:09') {
+                currentOrders = JSON.parse(JSON.stringify(PRESET_1409));
+                document.getElementById('ctrl-time').value = '14:09';
+                document.getElementById('ctrl-battery').value = '77';
+                syncStatusBar();
+                showToast('已載入 14:09 狀態範例');
+            } else {
+                currentOrders = JSON.parse(JSON.stringify(PRESET_1443));
+                document.getElementById('ctrl-time').value = '14:43';
+                document.getElementById('ctrl-battery').value = '71';
+                syncStatusBar();
+                showToast('已載入 14:43 狀態範例');
+            }
+            document.getElementById('status-filter').value = 'ALL';
+            renderOrders();
+        }
+
+        function clearAllOrders() {
+            currentOrders = [];
+            renderOrders();
+            showToast('已清空委託列表');
+        }
+
+        function syncStatusBar() {
+            const timeVal = document.getElementById('ctrl-time').value.trim() || '14:09';
+            let batVal = parseInt(document.getElementById('ctrl-battery').value, 10);
+            if (isNaN(batVal)) batVal = 77;
+            batVal = Math.min(100, Math.max(1, batVal));
+
+            document.getElementById('status-clock').textContent = timeVal;
+            document.getElementById('status-battery').textContent = batVal;
+
+            const pill = document.getElementById('status-battery-pill');
+            if (batVal <= 20) {
+                pill.classList.remove('bg-white', 'text-[#000000]');
+                pill.classList.add('bg-[#ff3b30]', 'text-white');
+            } else {
+                pill.classList.remove('bg-[#ff3b30]', 'text-white');
+                pill.classList.add('bg-white', 'text-[#000000]');
+            }
+        }
+
+        function promptEditBattery() {
+            const current = document.getElementById('status-battery').textContent;
+            const next = (parseInt(current, 10) >= 20) ? parseInt(current, 10) - 6 : 85;
+            document.getElementById('ctrl-battery').value = next;
+            syncStatusBar();
+            showToast(`電量已調整為 ${next}%（可於上方控制列自由輸入）`);
+        }
+
+        function promptEditClock() {
+            const cur = document.getElementById('status-clock').textContent;
+            const next = cur === '14:09' ? '14:43' : '14:09';
+            document.getElementById('ctrl-time').value = next;
+            syncStatusBar();
+            showToast(`時間已切換為 ${next}（可於上方控制列自由輸入）`);
+        }
+
+        function toggleToolbar(show) {
+            const bar = document.getElementById('simulator-toolbar');
+            const btn = document.getElementById('show-toolbar-btn');
+            if (show) {
+                bar.classList.remove('hidden');
+                btn.classList.add('hidden');
+            } else {
+                bar.classList.add('hidden');
+                btn.classList.remove('hidden');
+            }
+        }
+
+        function handleRefresh() {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.remove('animate-spin-once');
+            void icon.offsetWidth;
+            icon.classList.add('animate-spin-once');
+            showToast('委託即時回報已更新');
+            renderOrders();
+        }
+
+        function switchTopTab(btn, name) {
+            document.querySelectorAll('.top-tab').forEach(el => {
+                el.classList.remove('text-[#5bc2e7]');
+                el.classList.add('text-white');
+                const ind = el.querySelector('.tab-indicator');
+                if (ind) ind.remove();
+            });
+            btn.classList.remove('text-white');
+            btn.classList.add('text-[#5bc2e7]');
+            const indicator = document.createElement('span');
+            indicator.className = 'tab-indicator absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#5bc2e7]';
+            btn.appendChild(indicator);
+
+            if (name !== '委託') {
+                showToast(`目前展示「委託」頁面（已點選：${name}）`);
+            }
+        }
+
+        function switchBottomTab(btn, name) {
+            document.querySelectorAll('.bottom-tab').forEach(el => {
+                el.classList.remove('text-[#4db8e8]', 'font-medium');
+                el.classList.add('text-white');
+            });
+            btn.classList.remove('text-white');
+            btn.classList.add('text-[#4db8e8]', 'font-medium');
+            if (name !== '交易') {
+                showToast(`切換至「${name}」分頁`);
+            }
+        }
+
+        function openModifyModal(id) {
+            const order = currentOrders.find(o => o.id === id);
+            if (!order) return;
+
+            editingOrderId = id;
+            const sideLabel = order.side === 'BUY' ? '現買' : '現賣';
+            document.getElementById('modal-stock-title').textContent = `${order.name} (${order.code})`;
+            const metaEl = document.getElementById('modal-order-meta');
+            metaEl.textContent = `${sideLabel} (${order.market}) · ${order.orderDate} ${order.orderTime}`;
+            metaEl.className = order.side === 'BUY' ? 'font-medium text-[#e04856]' : 'font-medium text-[#29b677]';
+
+            document.getElementById('modal-price-input').value = Number(order.orderPrice).toFixed(2);
+            document.getElementById('modal-qty-input').value = order.remQty;
+            document.getElementById('modify-modal').classList.remove('hidden');
+        }
+
+        function closeModifyModal() {
+            document.getElementById('modify-modal').classList.add('hidden');
+            editingOrderId = null;
+        }
+
+        function adjustModalPrice(delta) {
+            const input = document.getElementById('modal-price-input');
+            const current = parseFloat(input.value) || 0;
+            const next = Math.max(0.01, current + delta);
+            input.value = next.toFixed(2);
+        }
+
+        function executeModifyOrder() {
+            const order = currentOrders.find(o => o.id === editingOrderId);
+            if (!order) return;
+
+            const newPrice = parseFloat(document.getElementById('modal-price-input').value);
+            const newQty = parseInt(document.getElementById('modal-qty-input').value, 10);
+
+            if (isNaN(newPrice) || newPrice <= 0) {
+                showToast('請輸入有效的委託價格');
+                return;
+            }
+            if (isNaN(newQty) || newQty <= 0 || newQty > order.remQty) {
+                showToast(`減量股數須介於 1 ~ ${formatNumber(order.remQty)}`);
+                return;
+            }
+
+            order.orderPrice = newPrice;
+            order.remQty = newQty;
+            order.statusDesc = `改價/減量成功 (新委價 ${newPrice.toFixed(2)}，剩餘 ${formatNumber(newQty)} 股)`;
+            closeModifyModal();
+            renderOrders();
+            showToast('已完成改價 / 減量委託');
+        }
+
+        function executeCancelOrder() {
+            currentOrders = currentOrders.filter(o => o.id !== editingOrderId);
+            closeModifyModal();
+            renderOrders();
+            showToast('刪單委託已確認取消');
+        }
+
+        function executeSimulateFill() {
+            const order = currentOrders.find(o => o.id === editingOrderId);
+            if (!order) return;
+
+            order.status = 'FILLED';
+            order.avgPrice = order.orderPrice;
+            order.filledQty = order.remQty;
+            order.remQty = 0;
+            order.statusDesc = `全部成交 (成均 ${Number(order.avgPrice).toFixed(2)})`;
+            closeModifyModal();
+            renderOrders();
+            showToast('模擬撮合完成：狀態已轉為「全部成交」');
+        }
+
+        function openAddOrderModal() {
+            const dateInput = document.getElementById('new-date');
+            if (!dateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+            document.getElementById('add-modal').classList.remove('hidden');
+        }
+
+        function closeAddOrderModal() {
+            document.getElementById('add-modal').classList.add('hidden');
+        }
+
+        function fillQuickStock(name, code, market, price) {
+            document.getElementById('new-name').value = name;
+            document.getElementById('new-code').value = code;
+            document.getElementById('new-market').value = market;
+            document.getElementById('new-price').value = price;
+        }
+
+        function submitNewOrder() {
+            const name = document.getElementById('new-name').value.trim() || '恆昌集團國際';
+            const code = document.getElementById('new-code').value.trim() || '01856.HK';
+            const market = document.getElementById('new-market').value;
+            const side = document.getElementById('new-side').value;
+            const status = document.getElementById('new-status').value;
+            const price = parseFloat(document.getElementById('new-price').value) || 0.56;
+            const rawQty = parseInt(document.getElementById('new-qty').value, 10);
+            const qty = Number.isFinite(rawQty) && rawQty >= 0 ? rawQty : 40000;
+            const orderDate = document.getElementById('new-date').value || new Date().toISOString().split('T')[0];
+            const orderTime = document.getElementById('new-time').value || '14:05:18';
+
+            const newOrder = {
+                id: 'ORD-' + Date.now(),
+                name: name,
+                code: code,
+                side: side,
+                market: market,
+                status: status,
+                orderPrice: price,
+                avgPrice: status === 'FILLED' ? price : null,
+                remQty: status === 'FILLED' ? 0 : qty,
+                filledQty: status === 'FILLED' ? qty : 0,
+                orderNo: 'H00' + Math.floor(10000 + Math.random() * 89999),
+                orderDate: orderDate,
+                orderTime: orderTime,
+                statusDesc: status === 'WARNING'
+                    ? '委託異常：交易額度檢核未通過或委託價格偏離限制'
+                    : (status === 'FILLED' ? '全部成交 (已全數撮合成交)' : '委託成功 (掛單中，可執行刪單或改價減量)'),
+                expanded: false
+            };
+
+            currentOrders.unshift(newOrder);
+            closeAddOrderModal();
+            renderOrders();
+            showToast(`已新增「${name}」委託紀錄`);
+        }
+
+        function openSearchModal() {
+            showToast(`目前共有 ${currentOrders.length} 筆委託紀錄`);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 2200);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('new-date').value = today;
+            syncStatusBar();
+            renderOrders();
+        });
+    </script>
+</body>
+</html>

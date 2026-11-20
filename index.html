@@ -102,7 +102,7 @@
         <div class="flex items-center justify-between gap-1.5 pt-1.5 border-t border-[#1e2b3b] text-[11px] text-gray-400">
             <div class="flex items-center gap-1.5 flex-1 min-w-0">
                 <span class="shrink-0">帳號:</span>
-                <input id="ctrl-account-no" type="text" value="982q-0639418" placeholder="輸入帳戶號碼" oninput="applyCustomAccountNo()" class="w-28 bg-[#090e14] border border-[#2e3e52] rounded px-1.5 py-0.5 text-white font-mono focus:border-[#4cc2ff] focus:outline-none">
+                <input id="ctrl-account-no" type="text" value="9885-5543536" placeholder="輸入帳戶號碼" oninput="applyCustomAccountNo()" class="w-28 bg-[#090e14] border border-[#2e3e52] rounded px-1.5 py-0.5 text-white font-mono focus:border-[#4cc2ff] focus:outline-none">
                 <select id="ctrl-account-currency" onchange="applyCustomAccountNo()" class="bg-[#090e14] border border-[#2e3e52] rounded px-1 py-0.5 text-white focus:border-[#4cc2ff] focus:outline-none">
                     <option value="複|台幣">複(台幣)</option>
                     <option value="複|美金">複(美金)</option>
@@ -331,7 +331,7 @@
 
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">自訂帳戶號碼</label>
-                        <input id="custom-acc-number" type="text" placeholder="例如：982q-0639418 或 701a-1234567" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white font-mono focus:border-[#4db8e8] focus:outline-none">
+                        <input id="custom-acc-number" type="text" placeholder="例如：9885-5543536 或 701a-1234567" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white font-mono focus:border-[#4db8e8] focus:outline-none">
                     </div>
                 </div>
 
@@ -359,11 +359,11 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs text-gray-400 mb-1">修改委託價格</label>
+                        <label class="block text-xs text-gray-400 mb-1">修改委託價格 (保留輸入小數位數，如 9.14 / 9.145 / 0.172)</label>
                         <div class="flex items-center gap-2">
-                            <button onclick="adjustModalPrice(-0.01)" class="w-10 h-10 rounded-lg bg-[#1a2838] hover:bg-[#24374d] text-lg font-bold">-</button>
-                            <input id="modal-price-input" type="number" step="0.01" class="flex-1 h-10 bg-[#070b12] border border-[#32465e] rounded-lg text-center font-bold text-base tabular-nums focus:border-[#4db8e8] focus:outline-none">
-                            <button onclick="adjustModalPrice(0.01)" class="w-10 h-10 rounded-lg bg-[#1a2838] hover:bg-[#24374d] text-lg font-bold">+</button>
+                            <button onclick="adjustModalPrice(-0.005)" class="w-10 h-10 rounded-lg bg-[#1a2838] hover:bg-[#24374d] text-lg font-bold">-</button>
+                            <input id="modal-price-input" type="number" step="any" class="flex-1 h-10 bg-[#070b12] border border-[#32465e] rounded-lg text-center font-bold text-base tabular-nums focus:border-[#4db8e8] focus:outline-none">
+                            <button onclick="adjustModalPrice(0.005)" class="w-10 h-10 rounded-lg bg-[#1a2838] hover:bg-[#24374d] text-lg font-bold">+</button>
                         </div>
                     </div>
 
@@ -449,8 +449,8 @@
                     <!-- 委託價格 + 委託數量 -->
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs text-gray-400 mb-1">委託價格</label>
-                            <input id="new-price" type="number" step="0.01" value="0.56" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 tabular-nums text-white">
+                            <label class="block text-xs text-gray-400 mb-1">委託價格 (如 9.14 / 9.145 / 0.172)</label>
+                            <input id="new-price" type="number" step="any" value="0.56" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 tabular-nums text-white">
                         </div>
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">委託股數 (如 40000 / 400000 / 4000000)</label>
@@ -484,10 +484,10 @@
          * 帳號清單（預設包含複委託台幣、複委託美金、複委託港幣、一般證券）
          */
         let accountList = [
-            { prefix: '複', number: '982q-0639418', currency: '台幣' },
-            { prefix: '複', number: '982q-0639418', currency: '美金' },
-            { prefix: '複', number: '982q-0639418', currency: '港幣' },
-            { prefix: '證', number: '981q-0885120', currency: '台幣' }
+            { prefix: '複', number: '9885-5543536', currency: '台幣' },
+            { prefix: '複', number: '9885-5543536', currency: '美金' },
+            { prefix: '複', number: '9885-5543536', currency: '港幣' },
+            { prefix: '證', number: '9885-5543536', currency: '台幣' }
         ];
         let selectedAccountIndex = 0;
 
@@ -553,7 +553,7 @@
             const current = accountList[selectedAccountIndex];
             document.getElementById('custom-acc-prefix').value = current ? current.prefix : '複';
             document.getElementById('custom-acc-currency').value = '美金';
-            document.getElementById('custom-acc-number').value = current ? current.number : '982q-0639418';
+            document.getElementById('custom-acc-number').value = current ? current.number : '9885-5543536';
             document.getElementById('account-modal').classList.remove('hidden');
         }
 
@@ -718,9 +718,19 @@
             return Math.trunc(parsed).toLocaleString('en-US');
         }
 
+        /**
+         * 價格格式化：完整保留輸入的小數位數
+         * 例如：9.14 -> 9.14、9.145 -> 9.145、0.172 -> 0.172
+         */
         function formatPrice(val) {
             if (val === null || val === undefined || val === '') return '--';
-            return Number(val).toFixed(2);
+            const str = String(val).trim();
+            if (/^-?\d+(\.\d+)?$/.test(str)) {
+                return str;
+            }
+            const num = Number(val);
+            if (!Number.isFinite(num)) return '--';
+            return String(Number(num.toPrecision(12)));
         }
 
         /**
@@ -970,7 +980,7 @@
             metaEl.textContent = `${sideLabel} (${order.market}) · ${order.orderDate} ${order.orderTime}`;
             metaEl.className = order.side === 'BUY' ? 'font-medium text-[#e04856]' : 'font-medium text-[#29b677]';
 
-            document.getElementById('modal-price-input').value = Number(order.orderPrice).toFixed(2);
+            document.getElementById('modal-price-input').value = formatPrice(order.orderPrice);
             document.getElementById('modal-qty-input').value = order.remQty;
             document.getElementById('modify-modal').classList.remove('hidden');
         }
@@ -983,15 +993,16 @@
         function adjustModalPrice(delta) {
             const input = document.getElementById('modal-price-input');
             const current = parseFloat(input.value) || 0;
-            const next = Math.max(0.01, current + delta);
-            input.value = next.toFixed(2);
+            const next = Math.max(0.001, current + delta);
+            input.value = String(Number(next.toPrecision(10)));
         }
 
         function executeModifyOrder() {
             const order = currentOrders.find(o => o.id === editingOrderId);
             if (!order) return;
 
-            const newPrice = parseFloat(document.getElementById('modal-price-input').value);
+            const rawPriceStr = document.getElementById('modal-price-input').value.trim();
+            const newPrice = parseFloat(rawPriceStr);
             const newQty = parseInt(document.getElementById('modal-qty-input').value, 10);
 
             if (isNaN(newPrice) || newPrice <= 0) {
@@ -1003,9 +1014,10 @@
                 return;
             }
 
-            order.orderPrice = newPrice;
+            const formattedPrice = formatPrice(rawPriceStr);
+            order.orderPrice = formattedPrice;
             order.remQty = newQty;
-            order.statusDesc = `改價/減量成功 (新委價 ${newPrice.toFixed(2)}，剩餘 ${formatNumber(newQty)} 股)`;
+            order.statusDesc = `改價/減量成功 (新委價 ${formattedPrice}，剩餘 ${formatNumber(newQty)} 股)`;
             closeModifyModal();
             renderOrders();
             showToast('已完成改價 / 減量委託');
@@ -1026,7 +1038,7 @@
             order.avgPrice = order.orderPrice;
             order.filledQty = order.remQty;
             order.remQty = 0;
-            order.statusDesc = `全部成交 (成均 ${Number(order.avgPrice).toFixed(2)})`;
+            order.statusDesc = `全部成交 (成均 ${formatPrice(order.avgPrice)})`;
             closeModifyModal();
             renderOrders();
             showToast('模擬撮合完成：狀態已轉為「全部成交」');
@@ -1058,7 +1070,9 @@
             const market = document.getElementById('new-market').value;
             const side = document.getElementById('new-side').value;
             const status = document.getElementById('new-status').value;
-            const price = parseFloat(document.getElementById('new-price').value) || 0.56;
+            const rawPriceStr = document.getElementById('new-price').value.trim();
+            const parsedPrice = parseFloat(rawPriceStr);
+            const price = (Number.isFinite(parsedPrice) && parsedPrice > 0) ? formatPrice(rawPriceStr) : '0.56';
             const rawQty = parseInt(document.getElementById('new-qty').value, 10);
             const qty = Number.isFinite(rawQty) && rawQty >= 0 ? rawQty : 40000;
             const orderDate = document.getElementById('new-date').value || new Date().toISOString().split('T')[0];

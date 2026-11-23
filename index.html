@@ -63,13 +63,13 @@
 
         /* 點擊列展開委託明細的平滑抽屜 */
         .detail-drawer {
-            transition: max-height 0.24s ease-out, opacity 0.2s ease-out;
+            transition: max-height 0.28s ease-out, opacity 0.2s ease-out;
             max-height: 0;
             opacity: 0;
             overflow: hidden;
         }
         .detail-drawer.open {
-            max-height: 180px;
+            max-height: 460px;
             opacity: 1;
         }
     </style>
@@ -399,26 +399,26 @@
                     <!-- 常用標的快選 -->
                     <div class="flex items-center gap-1.5 flex-wrap text-xs">
                         <span class="text-gray-400">快選：</span>
-                        <button type="button" onclick="fillQuickStock('恆昌集團國際', '01856.HK', '港', '0.56')" class="px-2 py-0.5 rounded bg-[#182636] hover:bg-[#22354a] text-gray-200 border border-[#2b3f57]">恆昌集團國際</button>
-                        <button type="button" onclick="fillQuickStock('騰訊控股', '00700.HK', '港', '382.40')" class="px-2 py-0.5 rounded bg-[#182636] hover:bg-[#22354a] text-gray-200 border border-[#2b3f57]">騰訊控股</button>
+                        <button type="button" onclick="fillQuickStock('大森控股', '01580.HK', '港', '0.745')" class="px-2 py-0.5 rounded bg-[#182636] hover:bg-[#22354a] text-gray-200 border border-[#2b3f57]">大森控股</button>
+                        <button type="button" onclick="fillQuickStock('中寶新材', '02439.HK', '港', '0.172')" class="px-2 py-0.5 rounded bg-[#182636] hover:bg-[#22354a] text-gray-200 border border-[#2b3f57]">中寶新材</button>
                         <button type="button" onclick="fillQuickStock('輝達 NVDA', 'NVDA.US', '美', '138.50')" class="px-2 py-0.5 rounded bg-[#182636] hover:bg-[#22354a] text-gray-200 border border-[#2b3f57]">輝達 NVDA</button>
                     </div>
 
                     <!-- 商品名稱 -->
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">商品名稱</label>
-                        <input id="new-name" type="text" value="恆昌集團國際" placeholder="請輸入股票名稱" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white focus:border-[#4db8e8] focus:outline-none">
+                        <input id="new-name" type="text" value="大森控股" placeholder="請輸入股票名稱" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white focus:border-[#4db8e8] focus:outline-none">
                     </div>
 
                     <!-- 股票代號 + 市場別 -->
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">股票代號</label>
-                            <input id="new-code" type="text" value="01856.HK" placeholder="例: 01856.HK" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white font-mono focus:border-[#4db8e8] focus:outline-none">
+                            <input id="new-code" type="text" value="01580.HK" placeholder="例: 01580.HK" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white font-mono focus:border-[#4db8e8] focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">市場別</label>
-                            <select id="new-market" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white">
+                            <select id="new-market" onchange="syncMarketDefaults()" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white">
                                 <option value="港">(港) 香港</option>
                                 <option value="美">(美) 美國</option>
                                 <option value="日">(日) 日本</option>
@@ -427,13 +427,25 @@
                         </div>
                     </div>
 
+                    <!-- 交易所 + 委託書號 -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">交易所</label>
+                            <input id="new-exchange" type="text" value="香港交易所" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white focus:border-[#4db8e8] focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">委託書號</label>
+                            <input id="new-order-no" type="text" value="2300499" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white font-mono focus:border-[#4db8e8] focus:outline-none">
+                        </div>
+                    </div>
+
                     <!-- 買賣別 + 委託狀態 -->
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">買賣別</label>
                             <select id="new-side" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white">
-                                <option value="SELL">現賣 (綠色)</option>
                                 <option value="BUY">現買 (紅色)</option>
+                                <option value="SELL">現賣 (綠色)</option>
                             </select>
                         </div>
                         <div>
@@ -449,12 +461,12 @@
                     <!-- 委託價格 + 委託數量 -->
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs text-gray-400 mb-1">委託價格 (如 9.14 / 9.145 / 0.172)</label>
-                            <input id="new-price" type="number" step="any" value="0.56" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 tabular-nums text-white">
+                            <label class="block text-xs text-gray-400 mb-1">委託價格 (如 0.745 / 0.172 / 9.145)</label>
+                            <input id="new-price" type="number" step="any" value="0.745" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 tabular-nums text-white">
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-400 mb-1">委託股數 (如 40000 / 400000 / 4000000)</label>
-                            <input id="new-qty" type="number" step="1000" value="40000" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 tabular-nums text-white">
+                            <label class="block text-xs text-gray-400 mb-1">委託股數 (如 90000 / 210000)</label>
+                            <input id="new-qty" type="number" step="1000" value="210000" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 tabular-nums text-white">
                         </div>
                     </div>
 
@@ -466,7 +478,7 @@
                         </div>
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">委託時間</label>
-                            <input id="new-time" type="time" step="1" value="14:05:18" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white tabular-nums">
+                            <input id="new-time" type="time" step="1" value="10:40:54" class="w-full h-9 bg-[#070b12] border border-[#32465e] rounded-lg px-2.5 text-white tabular-nums">
                         </div>
                     </div>
                 </div>
@@ -490,6 +502,22 @@
             { prefix: '證', number: '9885-5543536', currency: '台幣' }
         ];
         let selectedAccountIndex = 0;
+
+        const MARKET_META = {
+            '港': { exchange: '香港交易所', goodsCurrency: '港幣' },
+            '美': { exchange: '紐約證券交易所', goodsCurrency: '美元' },
+            '日': { exchange: '東京證券交易所', goodsCurrency: '日圓' },
+            '台': { exchange: '台灣證券交易所', goodsCurrency: '新台幣' }
+        };
+
+        function getSettlementCurrencyLabel() {
+            const acc = accountList[selectedAccountIndex];
+            if (!acc) return '新台幣';
+            if (acc.currency === '台幣') return '新台幣';
+            if (acc.currency === '美金') return '美金';
+            if (acc.currency === '港幣') return '港幣';
+            return acc.currency;
+        }
 
         function formatAccountLabel(acc) {
             return `${acc.prefix} ${acc.number}(${acc.currency})`;
@@ -520,6 +548,7 @@
             selectedAccountIndex = parseInt(select.value, 10) || 0;
             syncToolbarAccountInputs();
             const current = accountList[selectedAccountIndex];
+            renderOrders();
             showToast('已切換帳號：' + formatAccountLabel(current));
         }
 
@@ -535,7 +564,6 @@
             const oldNumber = current.number;
             const newNumber = rawNo || oldNumber;
 
-            // 若原本幾組複委託共用同一個帳戶號碼，一併同步更新號碼方便切換台幣/美金/港幣
             accountList.forEach(acc => {
                 if (acc.number === oldNumber && acc.prefix === current.prefix) {
                     acc.number = newNumber;
@@ -547,6 +575,7 @@
             current.number = newNumber;
 
             renderAccountOptions();
+            renderOrders();
         }
 
         function openAccountModal() {
@@ -583,8 +612,28 @@
             }
 
             renderAccountOptions();
+            renderOrders();
             closeAccountModal();
             showToast('已套用帳號：' + formatAccountLabel(accountList[selectedAccountIndex]));
+        }
+
+        /**
+         * 建立預設明細紀錄
+         */
+        function buildDefaultLogs(order) {
+            const isFilled = order.status === 'FILLED';
+            const isWarning = order.status === 'WARNING';
+            const stateLabel = isFilled ? '全部成交' : (isWarning ? '委託異常' : '委託成功');
+            const qtyForRow = isFilled ? order.filledQty : order.remQty;
+            const logs = [
+                {
+                    time: order.orderTime,
+                    status: stateLabel,
+                    price: formatPrice(order.orderPrice),
+                    qty: qtyForRow
+                }
+            ];
+            return logs;
         }
 
         /**
@@ -593,53 +642,69 @@
         const PRESET_1409 = [
             {
                 id: 'ORD-101',
-                name: '恆昌集團國際',
-                code: '01856.HK',
-                side: 'SELL',
+                name: '大森控股',
+                code: '01580.HK',
+                exchange: '香港交易所',
+                goodsCurrency: '港幣',
+                side: 'BUY',
                 market: '港',
                 status: 'PENDING',
-                orderPrice: 0.56,
+                orderPrice: '0.735',
                 avgPrice: null,
-                remQty: 40000,
+                remQty: 90000,
                 filledQty: 0,
-                orderNo: 'H0082914',
-                orderDate: '2026-11-19',
-                orderTime: '14:05:18',
-                statusDesc: '委託成功 (掛單中，可執行刪單或改價減量)',
+                orderNo: '2300499',
+                orderDate: '2026-11-23',
+                orderTime: '10:40:54',
+                statusText: '委託成功',
+                logs: [
+                    { time: '10:40:54', status: '委託成功', price: '0.735', qty: 90000 }
+                ],
                 expanded: false
             },
             {
                 id: 'ORD-102',
-                name: '恆昌集團國際',
-                code: '01856.HK',
+                name: '大森控股',
+                code: '01580.HK',
+                exchange: '香港交易所',
+                goodsCurrency: '港幣',
                 side: 'BUY',
                 market: '港',
                 status: 'FILLED',
-                orderPrice: 0.52,
-                avgPrice: 0.52,
+                orderPrice: '0.745',
+                avgPrice: '0.745',
                 remQty: 0,
-                filledQty: 400000,
-                orderNo: 'H0082703',
-                orderDate: '2026-11-19',
-                orderTime: '13:48:02',
-                statusDesc: '全部成交 (已全數撮合成交)',
+                filledQty: 210000,
+                orderNo: '2300512',
+                orderDate: '2026-11-23',
+                orderTime: '10:45:10',
+                statusText: '全部成交',
+                logs: [
+                    { time: '10:45:10', status: '委託成功', price: '0.745', qty: 210000 },
+                    { time: '10:45:18', status: '全部成交', price: '0.745', qty: 210000 }
+                ],
                 expanded: false
             },
             {
                 id: 'ORD-103',
-                name: '恆昌集團國際',
-                code: '01856.HK',
-                side: 'BUY',
+                name: '中寶新材',
+                code: '02439.HK',
+                exchange: '香港交易所',
+                goodsCurrency: '港幣',
+                side: 'SELL',
                 market: '港',
                 status: 'WARNING',
-                orderPrice: 0.52,
+                orderPrice: '0.172',
                 avgPrice: null,
-                remQty: 4000000,
+                remQty: 400000,
                 filledQty: 0,
-                orderNo: 'H0082699',
-                orderDate: '2026-11-19',
-                orderTime: '13:47:55',
-                statusDesc: '委託異常：交易額度檢核未通過或委託價格偏離限制',
+                orderNo: '2300588',
+                orderDate: '2026-11-23',
+                orderTime: '11:02:26',
+                statusText: '委託異常',
+                logs: [
+                    { time: '11:02:26', status: '委託異常', price: '0.172', qty: 400000 }
+                ],
                 expanded: false
             }
         ];
@@ -650,53 +715,48 @@
         const PRESET_1443 = [
             {
                 id: 'ORD-101',
-                name: '恆昌集團國際',
-                code: '01856.HK',
-                side: 'SELL',
+                name: '大森控股',
+                code: '01580.HK',
+                exchange: '香港交易所',
+                goodsCurrency: '港幣',
+                side: 'BUY',
                 market: '港',
                 status: 'FILLED',
-                orderPrice: 0.56,
-                avgPrice: 0.56,
+                orderPrice: '0.735',
+                avgPrice: '0.735',
                 remQty: 0,
-                filledQty: 40000,
-                orderNo: 'H0082914',
-                orderDate: '2026-11-19',
-                orderTime: '14:05:18',
-                statusDesc: '全部成交 (14:32 撮合成交 40,000 股)',
+                filledQty: 90000,
+                orderNo: '2300499',
+                orderDate: '2026-11-23',
+                orderTime: '10:40:54',
+                statusText: '全部成交',
+                logs: [
+                    { time: '10:40:54', status: '委託成功', price: '0.735', qty: 90000 },
+                    { time: '14:32:12', status: '全部成交', price: '0.735', qty: 90000 }
+                ],
                 expanded: false
             },
             {
                 id: 'ORD-102',
-                name: '恆昌集團國際',
-                code: '01856.HK',
+                name: '大森控股',
+                code: '01580.HK',
+                exchange: '香港交易所',
+                goodsCurrency: '港幣',
                 side: 'BUY',
                 market: '港',
                 status: 'FILLED',
-                orderPrice: 0.52,
-                avgPrice: 0.52,
+                orderPrice: '0.745',
+                avgPrice: '0.745',
                 remQty: 0,
-                filledQty: 400000,
-                orderNo: 'H0082703',
-                orderDate: '2026-11-19',
-                orderTime: '13:48:02',
-                statusDesc: '全部成交 (已全數撮合成交)',
-                expanded: false
-            },
-            {
-                id: 'ORD-103',
-                name: '恆昌集團國際',
-                code: '01856.HK',
-                side: 'BUY',
-                market: '港',
-                status: 'WARNING',
-                orderPrice: 0.52,
-                avgPrice: null,
-                remQty: 4000000,
-                filledQty: 0,
-                orderNo: 'H0082699',
-                orderDate: '2026-11-19',
-                orderTime: '13:47:55',
-                statusDesc: '委託異常：交易額度檢核未通過或委託價格偏離限制',
+                filledQty: 210000,
+                orderNo: '2300512',
+                orderDate: '2026-11-23',
+                orderTime: '10:45:10',
+                statusText: '全部成交',
+                logs: [
+                    { time: '10:45:10', status: '委託成功', price: '0.745', qty: 210000 },
+                    { time: '10:45:18', status: '全部成交', price: '0.745', qty: 210000 }
+                ],
                 expanded: false
             }
         ];
@@ -734,11 +794,35 @@
         }
 
         /**
-         * 渲染委託列表（欄位與位置完全依參考圖片配置）
+         * 將 YYYY-MM-DD 轉為 YYYY/MM/DD
+         */
+        function formatSlashDate(dateStr) {
+            if (!dateStr) return '2026/11/23';
+            return String(dateStr).replace(/-/g, '/');
+        }
+
+        function getOrderLogsHtml(order) {
+            const logs = Array.isArray(order.logs) && order.logs.length > 0
+                ? order.logs
+                : buildDefaultLogs(order);
+
+            return logs.map(row => `
+                <div class="grid grid-cols-4 items-center px-3 py-2 text-[13.5px] text-[#e5ebf2] bg-[#080c12]/90 border-b border-[#141d29] last:border-b-0 tabular-nums">
+                    <div class="text-left">${row.time || order.orderTime}</div>
+                    <div class="text-center">${row.status}</div>
+                    <div class="text-right pr-2">${formatPrice(row.price)}</div>
+                    <div class="text-right">${formatNumber(row.qty)}</div>
+                </div>
+            `).join('');
+        }
+
+        /**
+         * 渲染委託列表（欄位與位置完全依參考圖片配置，展開區對齊圖一、成交列對齊圖二）
          */
         function renderOrders() {
             const container = document.getElementById('orders-container');
             const filterVal = document.getElementById('status-filter').value;
+            const settlementCurrency = getSettlementCurrencyLabel();
 
             const filtered = currentOrders.filter(item => {
                 if (filterVal === 'ALL') return true;
@@ -754,6 +838,14 @@
                 const isBuy = order.side === 'BUY';
                 const sideText = isBuy ? '現買' : '現賣';
                 const sideColorClass = isBuy ? 'text-[#e04856]' : 'text-[#29b677]';
+
+                const marketMeta = MARKET_META[order.market] || { exchange: '香港交易所', goodsCurrency: '港幣' };
+                const exchangeName = order.exchange || marketMeta.exchange;
+                const goodsCurrency = order.goodsCurrency || marketMeta.goodsCurrency;
+                const detailStatusText = order.statusText || (
+                    order.status === 'FILLED' ? '全部成交' : (order.status === 'WARNING' ? '委託異常' : '委託成功')
+                );
+                const statusColorClass = order.status === 'WARNING' ? 'text-[#e04856]' : 'text-[#2c7be5]';
 
                 let leftActionHtml = '';
                 let warningEdgeHtml = '';
@@ -806,7 +898,7 @@
                             </span>
                         </div>
 
-                        <!-- 欄4：數量 餘/成（千分位顯示 40,000 / 400,000 / 4,000,000） + 右側小向下箭頭 -->
+                        <!-- 欄4：數量 餘/成（千分位顯示） + 右側小箭頭 -->
                         <div class="w-[116px] flex items-center justify-end gap-1.5 tabular-nums leading-[1.35] shrink-0">
                             <div class="flex flex-col items-end min-w-0">
                                 <span class="text-[14.5px] font-medium text-white break-all text-right">
@@ -823,27 +915,43 @@
                         </div>
                     </div>
 
-                    <!-- 展開後的委託日期、書號與詳細狀態 -->
-                    <div class="detail-drawer ${order.expanded ? 'open' : ''} bg-[#121c29] border-t border-[#243449] px-4 text-xs text-gray-300">
-                        <div class="py-2.5 space-y-1.5">
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">商品代號：</span>
-                                <span class="font-mono text-gray-200">${order.code}</span>
+                    <!-- 展開後的委託詳情卡片（對齊圖一）與下方明細表格 -->
+                    <div class="detail-drawer ${order.expanded ? 'open' : ''}">
+                        <!-- 淺灰底詳情資訊區塊 -->
+                        <div class="bg-[#eceef1] text-[#1c222b] px-3.5 py-2.5 text-[13.5px] leading-[1.6] space-y-0.5 border-t border-[#cfd5dd]">
+                            <div class="font-medium text-[#11161d]">${exchangeName}</div>
+                            <div class="flex items-center gap-2.5 tabular-nums">
+                                <span class="text-[#374151]">委託時間</span>
+                                <span class="font-medium text-[#11161d]">${formatSlashDate(order.orderDate)} ${order.orderTime}</span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">委託日期時間：</span>
-                                <span class="tabular-nums text-gray-200">${order.orderDate} ${order.orderTime}</span>
+                            <div class="flex items-center gap-2.5 tabular-nums">
+                                <span class="text-[#374151]">委託書號</span>
+                                <span class="font-medium text-[#11161d]">${order.orderNo}</span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">委託書號：</span>
-                                <span class="font-mono text-gray-200">${order.orderNo}</span>
+                            <div class="flex items-center gap-5">
+                                <span class="text-[#374151]">商品幣</span>
+                                <span class="font-medium text-[#11161d]">${goodsCurrency}</span>
                             </div>
-                            <div class="flex justify-between items-start gap-2">
-                                <span class="text-gray-400 shrink-0">回報狀態：</span>
-                                <span class="text-right font-medium ${order.status === 'WARNING' ? 'text-[#ff9c38]' : (order.status === 'FILLED' ? 'text-[#28cd72]' : 'text-[#5bc2e7]')}">
-                                    ${order.statusDesc}
-                                </span>
+                            <div class="flex items-center gap-5">
+                                <span class="text-[#374151]">交割幣</span>
+                                <span class="font-medium text-[#11161d]">${settlementCurrency}</span>
                             </div>
+                            <div class="pt-0.5 font-semibold ${statusColorClass}">
+                                ${detailStatusText}
+                            </div>
+                        </div>
+
+                        <!-- 下方明細小表頭 -->
+                        <div class="grid grid-cols-4 items-center px-3 py-1.5 text-[13px] font-medium text-[#c5ccd4] bg-[#2a313b] border-y border-[#38414e]">
+                            <div class="text-left">時間</div>
+                            <div class="text-center">狀態</div>
+                            <div class="text-right pr-2">價位</div>
+                            <div class="text-right">數量</div>
+                        </div>
+
+                        <!-- 下方明細資料列 -->
+                        <div>
+                            ${getOrderLogsHtml(order)}
                         </div>
                     </div>
                 </div>
@@ -977,7 +1085,7 @@
             const sideLabel = order.side === 'BUY' ? '現買' : '現賣';
             document.getElementById('modal-stock-title').textContent = `${order.name} (${order.code})`;
             const metaEl = document.getElementById('modal-order-meta');
-            metaEl.textContent = `${sideLabel} (${order.market}) · ${order.orderDate} ${order.orderTime}`;
+            metaEl.textContent = `${sideLabel} (${order.market}) · ${formatSlashDate(order.orderDate)} ${order.orderTime}`;
             metaEl.className = order.side === 'BUY' ? 'font-medium text-[#e04856]' : 'font-medium text-[#29b677]';
 
             document.getElementById('modal-price-input').value = formatPrice(order.orderPrice);
@@ -995,6 +1103,14 @@
             const current = parseFloat(input.value) || 0;
             const next = Math.max(0.001, current + delta);
             input.value = String(Number(next.toPrecision(10)));
+        }
+
+        function getCurrentClockHMS() {
+            const raw = (document.getElementById('status-clock').textContent || '').trim();
+            if (/^\d{2}:\d{2}:\d{2}$/.test(raw)) return raw;
+            if (/^\d{2}:\d{2}$/.test(raw)) return `${raw}:00`;
+            const now = new Date();
+            return now.toTimeString().slice(0, 8);
         }
 
         function executeModifyOrder() {
@@ -1017,7 +1133,15 @@
             const formattedPrice = formatPrice(rawPriceStr);
             order.orderPrice = formattedPrice;
             order.remQty = newQty;
-            order.statusDesc = `改價/減量成功 (新委價 ${formattedPrice}，剩餘 ${formatNumber(newQty)} 股)`;
+            order.statusText = '委託成功';
+            order.logs = Array.isArray(order.logs) ? order.logs : [];
+            order.logs.push({
+                time: getCurrentClockHMS(),
+                status: '改價減量',
+                price: formattedPrice,
+                qty: newQty
+            });
+
             closeModifyModal();
             renderOrders();
             showToast('已完成改價 / 減量委託');
@@ -1034,21 +1158,36 @@
             const order = currentOrders.find(o => o.id === editingOrderId);
             if (!order) return;
 
+            const fillQty = order.remQty > 0 ? order.remQty : order.filledQty;
+            const fillPrice = formatPrice(order.orderPrice);
             order.status = 'FILLED';
-            order.avgPrice = order.orderPrice;
-            order.filledQty = order.remQty;
+            order.avgPrice = fillPrice;
+            order.filledQty = fillQty;
             order.remQty = 0;
-            order.statusDesc = `全部成交 (成均 ${formatPrice(order.avgPrice)})`;
+            order.statusText = '全部成交';
+            order.logs = Array.isArray(order.logs) ? order.logs : [];
+            order.logs.push({
+                time: getCurrentClockHMS(),
+                status: '全部成交',
+                price: fillPrice,
+                qty: fillQty
+            });
+
             closeModifyModal();
             renderOrders();
             showToast('模擬撮合完成：狀態已轉為「全部成交」');
         }
 
+        function syncMarketDefaults() {
+            const market = document.getElementById('new-market').value;
+            const meta = MARKET_META[market] || MARKET_META['港'];
+            document.getElementById('new-exchange').value = meta.exchange;
+        }
+
         function openAddOrderModal() {
             const dateInput = document.getElementById('new-date');
             if (!dateInput.value) {
-                const today = new Date().toISOString().split('T')[0];
-                dateInput.value = today;
+                dateInput.value = '2026-11-23';
             }
             document.getElementById('add-modal').classList.remove('hidden');
         }
@@ -1062,26 +1201,50 @@
             document.getElementById('new-code').value = code;
             document.getElementById('new-market').value = market;
             document.getElementById('new-price').value = price;
+            syncMarketDefaults();
         }
 
         function submitNewOrder() {
-            const name = document.getElementById('new-name').value.trim() || '恆昌集團國際';
-            const code = document.getElementById('new-code').value.trim() || '01856.HK';
+            const name = document.getElementById('new-name').value.trim() || '大森控股';
+            const code = document.getElementById('new-code').value.trim() || '01580.HK';
             const market = document.getElementById('new-market').value;
+            const marketMeta = MARKET_META[market] || MARKET_META['港'];
+            const exchange = document.getElementById('new-exchange').value.trim() || marketMeta.exchange;
+            const orderNo = document.getElementById('new-order-no').value.trim() || String(Math.floor(2000000 + Math.random() * 7999999));
             const side = document.getElementById('new-side').value;
             const status = document.getElementById('new-status').value;
             const rawPriceStr = document.getElementById('new-price').value.trim();
             const parsedPrice = parseFloat(rawPriceStr);
-            const price = (Number.isFinite(parsedPrice) && parsedPrice > 0) ? formatPrice(rawPriceStr) : '0.56';
+            const price = (Number.isFinite(parsedPrice) && parsedPrice > 0) ? formatPrice(rawPriceStr) : '0.745';
             const rawQty = parseInt(document.getElementById('new-qty').value, 10);
-            const qty = Number.isFinite(rawQty) && rawQty >= 0 ? rawQty : 40000;
-            const orderDate = document.getElementById('new-date').value || new Date().toISOString().split('T')[0];
-            const orderTime = document.getElementById('new-time').value || '14:05:18';
+            const qty = Number.isFinite(rawQty) && rawQty >= 0 ? rawQty : 210000;
+            const orderDate = document.getElementById('new-date').value || '2026-11-23';
+            const orderTime = document.getElementById('new-time').value || '10:40:54';
+
+            const statusText = status === 'FILLED' ? '全部成交' : (status === 'WARNING' ? '委託異常' : '委託成功');
+            const logs = [
+                {
+                    time: orderTime,
+                    status: status === 'FILLED' ? '委託成功' : statusText,
+                    price: price,
+                    qty: qty
+                }
+            ];
+            if (status === 'FILLED') {
+                logs.push({
+                    time: orderTime,
+                    status: '全部成交',
+                    price: price,
+                    qty: qty
+                });
+            }
 
             const newOrder = {
                 id: 'ORD-' + Date.now(),
                 name: name,
                 code: code,
+                exchange: exchange,
+                goodsCurrency: marketMeta.goodsCurrency,
                 side: side,
                 market: market,
                 status: status,
@@ -1089,12 +1252,11 @@
                 avgPrice: status === 'FILLED' ? price : null,
                 remQty: status === 'FILLED' ? 0 : qty,
                 filledQty: status === 'FILLED' ? qty : 0,
-                orderNo: 'H00' + Math.floor(10000 + Math.random() * 89999),
+                orderNo: orderNo,
                 orderDate: orderDate,
                 orderTime: orderTime,
-                statusDesc: status === 'WARNING'
-                    ? '委託異常：交易額度檢核未通過或委託價格偏離限制'
-                    : (status === 'FILLED' ? '全部成交 (已全數撮合成交)' : '委託成功 (掛單中，可執行刪單或改價減量)'),
+                statusText: statusText,
+                logs: logs,
                 expanded: false
             };
 
@@ -1121,8 +1283,10 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('new-date').value = today;
+            const dateInput = document.getElementById('new-date');
+            if (!dateInput.value) {
+                dateInput.value = '2026-11-23';
+            }
             renderAccountOptions();
             syncStatusBar();
             renderOrders();
